@@ -3,6 +3,7 @@ import { protect } from "../middlewares/auth.middleware.js";
 import {
   createOrder,
   getOrders,
+  getOrderById,
   updateOrderStatus,
   deleteOrder,
 } from "../controllers/orderController.js";
@@ -14,6 +15,7 @@ router.use(protect);
 
 router.post("/", createOrder);
 router.get("/", getOrders);
+router.get("/:id", getOrderById);
 router.put("/:id/status", updateOrderStatus);
 router.delete("/:id", deleteOrder);
 

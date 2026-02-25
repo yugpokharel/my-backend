@@ -45,6 +45,27 @@ export const getOrders = async (req, res, next) => {
   }
 };
 
+// GET /api/orders/:id — Get a single order by ID
+export const getOrderById = async (req, res, next) => {
+  try {
+    const order = await Order.findById(req.params.id).populate("user", "fullName");
+
+    if (!order) {
+      return res.status(404).json({ message: "Order not found" });
+    }
+
+    // Customers can only view their own orders
+    const role = req.user.role;
+    if (role !== "owner" && role !== "admin" && order.user._id.toString() !== req.user._id.toString()) {
+      return res.status(403).json({ message: "Not authorized to view this order" });
+    }
+
+    res.status(200).json({ data: order });
+  } catch (err) {
+    next(err);
+  }
+};
+
 // PUT /api/orders/:id/status — Update order status (owner/admin only)
 export const updateOrderStatus = async (req, res, next) => {
   try {
