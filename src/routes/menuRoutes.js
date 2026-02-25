@@ -5,6 +5,7 @@ import {
   createMenuItem,
   updateMenuItem,
   deleteMenuItem,
+  uploadMenuImage,
 } from "../controllers/menuController.js";
 
 const router = express.Router();
@@ -12,8 +13,8 @@ const router = express.Router();
 router.use(protect);
 
 router.get("/", getMenuItems);
-router.post("/", createMenuItem);
-router.put("/:id", updateMenuItem);
+router.post("/", uploadMenuImage, createMenuItem);
+router.put("/:id", uploadMenuImage, updateMenuItem);
 router.delete("/:id", deleteMenuItem);
 
 export default router;

@@ -1,4 +1,33 @@
 import MenuItem from "../models/MenuItem.js";
+import multer from "multer";
+import path from "path";
+
+// Multer config for menu item images
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    cb(null, "uploads/");
+  },
+  filename: (req, file, cb) => {
+    const uniqueSuffix = Date.now() + "-" + Math.round(Math.random() * 1e9);
+    cb(null, "menu-" + uniqueSuffix + path.extname(file.originalname));
+  },
+});
+
+const upload = multer({
+  storage,
+  limits: { fileSize: 5 * 1024 * 1024 },
+  fileFilter: (req, file, cb) => {
+    const allowed = [".jpg", ".jpeg", ".png", ".gif", ".webp"];
+    const ext = path.extname(file.originalname).toLowerCase();
+    if (allowed.includes(ext)) {
+      cb(null, true);
+    } else {
+      cb(new Error("Only image files (JPEG, PNG, GIF, WebP) are allowed"));
+    }
+  },
+});
+
+export const uploadMenuImage = upload.single("image");
 
 // GET /api/menu — Get all menu items (any authenticated user)
 export const getMenuItems = async (req, res, next) => {
@@ -18,13 +47,20 @@ export const createMenuItem = async (req, res, next) => {
       return res.status(403).json({ message: "Not authorized to add menu items" });
     }
 
-    const { name, price, category, image, isAvailable } = req.body;
+    const { name, price, category, isAvailable } = req.body;
+    const image = req.file ? `/uploads/${req.file.filename}` : req.body.image || null;
 
     if (!name || price == null || !category) {
       return res.status(400).json({ message: "name, price, and category are required" });
     }
 
-    const item = await MenuItem.create({ name, price, category, image, isAvailable });
+    const item = await MenuItem.create({
+      name,
+      price: Number(price),
+      category,
+      image,
+      isAvailable: isAvailable != null ? isAvailable === true || isAvailable === "true" : true,
+    });
     res.status(201).json({ data: item });
   } catch (err) {
     next(err);
@@ -39,7 +75,20 @@ export const updateMenuItem = async (req, res, next) => {
       return res.status(403).json({ message: "Not authorized to update menu items" });
     }
 
-    const item = await MenuItem.findByIdAndUpdate(req.params.id, req.body, {
+    const updateData = { ...req.body };
+
+    // If a file was uploaded, set the image path
+    if (req.file) {
+      updateData.image = `/uploads/${req.file.filename}`;
+    }
+
+    // Coerce types from form-data strings
+    if (updateData.price != null) updateData.price = Number(updateData.price);
+    if (updateData.isAvailable != null) {
+      updateData.isAvailable = updateData.isAvailable === true || updateData.isAvailable === "true";
+    }
+
+    const item = await MenuItem.findByIdAndUpdate(req.params.id, updateData, {
       new: true,
       runValidators: true,
     });
