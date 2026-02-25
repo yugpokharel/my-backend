@@ -5,7 +5,8 @@ const registerSchema = z.object({
   password: z.string().min(6),
   fullName: z.string().trim().optional(),
   username: z.string().trim().min(3).optional(),
-  phoneNumber: z.string().trim().min(7).optional()
+  phoneNumber: z.string().trim().min(7).optional(),
+  role: z.enum(["customer", "owner", "admin"]).optional()
 });
 
 const loginSchema = z.object({

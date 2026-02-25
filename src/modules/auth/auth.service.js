@@ -10,7 +10,7 @@ const buildHttpError = (message, statusCode) => {
   return err;
 };
 
-export const register = async ({ email, password, fullName, username, phoneNumber, profilePicture }) => {
+export const register = async ({ email, password, fullName, username, phoneNumber, profilePicture, role }) => {
   const existingUser = await authRepository.findByEmail(email);
   if (existingUser) throw buildHttpError("Email already in use", 409);
 
@@ -31,7 +31,8 @@ export const register = async ({ email, password, fullName, username, phoneNumbe
     fullName,
     username,
     phoneNumber,
-    profilePicture
+    profilePicture,
+    role
   });
 
   const userObj = user.toObject();

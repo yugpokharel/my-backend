@@ -50,7 +50,7 @@ export const register = async (req, res, next) => {
       });
     }
 
-    const { email, password, fullName, username, phoneNumber } = parseResult.data;
+    const { email, password, fullName, username, phoneNumber, role } = parseResult.data;
     const profilePicture = req.file ? `/uploads/profiles/${req.file.filename}` : null;
 
     console.log("File info:", req.file); 
@@ -62,7 +62,8 @@ export const register = async (req, res, next) => {
       fullName,
       username,
       phoneNumber,
-      profilePicture
+      profilePicture,
+      role
     });
 
     res.status(201).json({ 
