@@ -61,3 +61,13 @@ export const login = async ({ email, password }) => {
     user: userObj 
   };
 };
+
+export const updateProfilePicture = async (userId, profilePicture) => {
+  const user = await authRepository.updateById(userId, { profilePicture });
+  if (!user) {
+    const err = new Error("User not found");
+    err.statusCode = 404;
+    throw err;
+  }
+  return user;
+};

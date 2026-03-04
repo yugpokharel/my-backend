@@ -2,7 +2,6 @@ import MenuItem from "../models/MenuItem.js";
 import multer from "multer";
 import path from "path";
 
-// Multer config for menu item images
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
     cb(null, "uploads/");
@@ -29,7 +28,6 @@ const upload = multer({
 
 export const uploadMenuImage = upload.single("image");
 
-// GET /api/menu — Get all menu items (any authenticated user)
 export const getMenuItems = async (req, res, next) => {
   try {
     const items = await MenuItem.find().sort({ category: 1, name: 1 });
@@ -39,7 +37,6 @@ export const getMenuItems = async (req, res, next) => {
   }
 };
 
-// POST /api/menu — Add a new menu item (owner/admin only)
 export const createMenuItem = async (req, res, next) => {
   try {
     const role = req.user.role;
@@ -67,7 +64,6 @@ export const createMenuItem = async (req, res, next) => {
   }
 };
 
-// PUT /api/menu/:id — Update a menu item (owner/admin only)
 export const updateMenuItem = async (req, res, next) => {
   try {
     const role = req.user.role;
@@ -77,12 +73,10 @@ export const updateMenuItem = async (req, res, next) => {
 
     const updateData = { ...req.body };
 
-    // If a file was uploaded, set the image path
     if (req.file) {
       updateData.image = `/uploads/${req.file.filename}`;
     }
 
-    // Coerce types from form-data strings
     if (updateData.price != null) updateData.price = Number(updateData.price);
     if (updateData.isAvailable != null) {
       updateData.isAvailable = updateData.isAvailable === true || updateData.isAvailable === "true";
@@ -103,7 +97,6 @@ export const updateMenuItem = async (req, res, next) => {
   }
 };
 
-// DELETE /api/menu/:id — Delete a menu item (owner/admin only)
 export const deleteMenuItem = async (req, res, next) => {
   try {
     const role = req.user.role;

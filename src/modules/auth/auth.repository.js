@@ -16,4 +16,8 @@ export const authRepository = {
   create: async (data) => {
     return await User.create(data);
   },
+
+  updateById: async (id, data) => {
+    return await User.findByIdAndUpdate(id, data, { new: true }).select("-password");
+  },
 };

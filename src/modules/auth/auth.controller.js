@@ -106,3 +106,39 @@ export const login = async (req, res, next) => {
 };
 
 export const uploadMiddleware = upload.single("profilePicture");
+
+export const updateProfilePicture = async (req, res, next) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ message: "No image file provided" });
+    }
+
+    const newPath = `/uploads/profiles/${req.file.filename}`;
+
+    // Delete old profile picture if it exists
+    const oldPicture = req.user.profilePicture;
+    if (oldPicture) {
+      try {
+        // oldPicture is like "/uploads/profiles/file.jpg", strip leading slash for fs path
+        await fs.unlink(oldPicture.replace(/^\//, ""));
+      } catch (unlinkErr) {
+        // Old file may not exist, that's fine
+        console.error("Error deleting old profile picture:", unlinkErr.message);
+      }
+    }
+
+    // Update user in DB
+    const user = await authService.updateProfilePicture(req.user._id, newPath);
+
+    res.status(200).json({ data: { profilePicture: user.profilePicture } });
+  } catch (err) {
+    if (req.file) {
+      try {
+        await fs.unlink(req.file.path);
+      } catch (unlinkErr) {
+        console.error("Error deleting file:", unlinkErr);
+      }
+    }
+    next(err);
+  }
+};
