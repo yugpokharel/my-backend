@@ -4,6 +4,7 @@ import {
   createOrder,
   getOrders,
   getOrderById,
+  updateOrder,
   updateOrderStatus,
   deleteOrder,
 } from "../controllers/orderController.js";
@@ -17,6 +18,7 @@ router.post("/", createOrder);
 router.get("/", getOrders);
 router.get("/:id", getOrderById);
 router.put("/:id/status", updateOrderStatus);
+router.put("/:id", updateOrder);
 router.delete("/:id", deleteOrder);
 
 export default router;

@@ -66,6 +66,33 @@ export const getOrderById = async (req, res, next) => {
   }
 };
 
+// PUT /api/orders/:id — Update order fields (items, totalAmount, status, tableId)
+export const updateOrder = async (req, res, next) => {
+  try {
+    const { items, totalAmount, status, tableId, customerNote } = req.body;
+
+    const updateData = {};
+    if (items !== undefined) updateData.items = items;
+    if (totalAmount !== undefined) updateData.totalAmount = totalAmount;
+    if (status !== undefined) updateData.status = status;
+    if (tableId !== undefined) updateData.tableId = tableId;
+    if (customerNote !== undefined) updateData.customerNote = customerNote;
+
+    const order = await Order.findByIdAndUpdate(req.params.id, updateData, {
+      new: true,
+      runValidators: true,
+    });
+
+    if (!order) {
+      return res.status(404).json({ message: "Order not found" });
+    }
+
+    res.status(200).json({ data: order });
+  } catch (err) {
+    next(err);
+  }
+};
+
 // PUT /api/orders/:id/status — Update order status (owner/admin only)
 export const updateOrderStatus = async (req, res, next) => {
   try {
