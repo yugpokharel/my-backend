@@ -175,12 +175,13 @@ export const verifyOtp = async (req, res, next) => {
 
 export const resetPassword = async (req, res, next) => {
   try {
-    const { email, otp, password } = req.body;
-    if (!email || !otp || !password) {
+    const { email, otp, password, newPassword } = req.body;
+    const finalPassword = password || newPassword;
+    if (!email || !otp || !finalPassword) {
       return res.status(400).json({ message: "Email, OTP, and password are required" });
     }
 
-    await authService.resetPassword(email, otp, password);
+    await authService.resetPassword(email, otp, finalPassword);
 
     res.status(200).json({ message: "Password reset successfully" });
   } catch (err) {

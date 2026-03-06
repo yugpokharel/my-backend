@@ -74,7 +74,8 @@ export const updateProfilePicture = async (userId, profilePicture) => {
 };
 
 export const forgotPassword = async (email) => {
-  const user = await authRepository.findByEmail(email);
+  const normalizedEmail = email.trim().toLowerCase();
+  const user = await authRepository.findByEmail(normalizedEmail);
   if (!user) return; // Don't reveal if email exists
 
   const otp = Math.floor(100000 + Math.random() * 900000).toString();
@@ -84,23 +85,25 @@ export const forgotPassword = async (email) => {
   user.resetPasswordExpire = Date.now() + 15 * 60 * 1000; // 15 minutes
   await user.save();
 
-  // Send OTP email
-  try {
-    const { sendEmail } = await import("../../utils/sendEmail.js");
-    await sendEmail({
-      to: email,
-      subject: "ChiyaSathi - Password Reset OTP",
-      text: `Your password reset OTP is: ${otp}\n\nThis code expires in 15 minutes.\n\nIf you did not request this, please ignore this email.`,
+  // Send email in the background (don't block the response)
+  import("../../utils/sendEmail.js")
+    .then(({ sendEmail }) =>
+      sendEmail({
+        to: normalizedEmail,
+        subject: "ChiyaSathi - Password Reset OTP",
+        text: `Your password reset OTP is: ${otp}\n\nThis code expires in 15 minutes.\n\nIf you did not request this, please ignore this email.`,
+      })
+    )
+    .catch((err) => {
+      console.error("Failed to send reset email:", err.message);
+      console.log(`Password reset OTP for ${normalizedEmail}: ${otp}`);
     });
-  } catch (emailErr) {
-    console.error("Failed to send reset email:", emailErr.message);
-    console.log(`Password reset OTP for ${email}: ${otp}`);
-  }
 };
 
 export const verifyOtp = async (email, otp) => {
+  const normalizedEmail = email.trim().toLowerCase();
   const hashedOtp = crypto.createHash("sha256").update(otp).digest("hex");
-  const user = await authRepository.findByEmailAndResetToken(email, hashedOtp);
+  const user = await authRepository.findByEmailAndResetToken(normalizedEmail, hashedOtp);
 
   if (!user) {
     throw buildHttpError("Invalid or expired OTP", 400);
@@ -108,8 +111,9 @@ export const verifyOtp = async (email, otp) => {
 };
 
 export const resetPassword = async (email, otp, newPassword) => {
+  const normalizedEmail = email.trim().toLowerCase();
   const hashedOtp = crypto.createHash("sha256").update(otp).digest("hex");
-  const user = await authRepository.findByEmailAndResetToken(email, hashedOtp);
+  const user = await authRepository.findByEmailAndResetToken(normalizedEmail, hashedOtp);
 
   if (!user) {
     throw buildHttpError("Invalid or expired OTP", 400);
