@@ -77,26 +77,42 @@ export const forgotPassword = async (email) => {
   const user = await authRepository.findByEmail(email);
   if (!user) return; // Don't reveal if email exists
 
-  const rawToken = crypto.randomBytes(32).toString("hex");
-  const hashedToken = crypto.createHash("sha256").update(rawToken).digest("hex");
+  const otp = Math.floor(100000 + Math.random() * 900000).toString();
+  const hashedOtp = crypto.createHash("sha256").update(otp).digest("hex");
 
-  user.resetPasswordToken = hashedToken;
+  user.resetPasswordToken = hashedOtp;
   user.resetPasswordExpire = Date.now() + 15 * 60 * 1000; // 15 minutes
   await user.save();
 
-  // TODO: Send email with reset link. For now, log to console.
-  console.log(`Password reset token for ${email}: ${rawToken}`);
-  console.log(`Reset link: http://localhost:3000/reset-password?token=${rawToken}`);
-
-  return rawToken;
+  // Send OTP email
+  try {
+    const { sendEmail } = await import("../../utils/sendEmail.js");
+    await sendEmail({
+      to: email,
+      subject: "ChiyaSathi - Password Reset OTP",
+      text: `Your password reset OTP is: ${otp}\n\nThis code expires in 15 minutes.\n\nIf you did not request this, please ignore this email.`,
+    });
+  } catch (emailErr) {
+    console.error("Failed to send reset email:", emailErr.message);
+    console.log(`Password reset OTP for ${email}: ${otp}`);
+  }
 };
 
-export const resetPassword = async (token, newPassword) => {
-  const hashedToken = crypto.createHash("sha256").update(token).digest("hex");
-  const user = await authRepository.findByResetToken(hashedToken);
+export const verifyOtp = async (email, otp) => {
+  const hashedOtp = crypto.createHash("sha256").update(otp).digest("hex");
+  const user = await authRepository.findByEmailAndResetToken(email, hashedOtp);
 
   if (!user) {
-    throw buildHttpError("Invalid or expired reset token", 400);
+    throw buildHttpError("Invalid or expired OTP", 400);
+  }
+};
+
+export const resetPassword = async (email, otp, newPassword) => {
+  const hashedOtp = crypto.createHash("sha256").update(otp).digest("hex");
+  const user = await authRepository.findByEmailAndResetToken(email, hashedOtp);
+
+  if (!user) {
+    throw buildHttpError("Invalid or expired OTP", 400);
   }
 
   user.password = await bcrypt.hash(newPassword, 10);

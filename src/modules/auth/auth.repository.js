@@ -27,4 +27,12 @@ export const authRepository = {
       resetPasswordExpire: { $gt: Date.now() },
     });
   },
+
+  findByEmailAndResetToken: async (email, hashedToken) => {
+    return await User.findOne({
+      email,
+      resetPasswordToken: hashedToken,
+      resetPasswordExpire: { $gt: Date.now() },
+    });
+  },
 };
