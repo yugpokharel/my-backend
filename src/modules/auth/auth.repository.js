@@ -20,4 +20,11 @@ export const authRepository = {
   updateById: async (id, data) => {
     return await User.findByIdAndUpdate(id, data, { new: true }).select("-password");
   },
+
+  findByResetToken: async (hashedToken) => {
+    return await User.findOne({
+      resetPasswordToken: hashedToken,
+      resetPasswordExpire: { $gt: Date.now() },
+    });
+  },
 };

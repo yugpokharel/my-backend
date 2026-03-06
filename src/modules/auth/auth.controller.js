@@ -142,3 +142,34 @@ export const updateProfilePicture = async (req, res, next) => {
     next(err);
   }
 };
+
+export const forgotPassword = async (req, res, next) => {
+  try {
+    const { email } = req.body;
+    if (!email) {
+      return res.status(400).json({ message: "Email is required" });
+    }
+
+    await authService.forgotPassword(email);
+
+    // Always return success to not leak whether email exists
+    res.status(200).json({ message: "Password reset instructions sent to your email" });
+  } catch (err) {
+    next(err);
+  }
+};
+
+export const resetPassword = async (req, res, next) => {
+  try {
+    const { token, password } = req.body;
+    if (!token || !password) {
+      return res.status(400).json({ message: "Token and password are required" });
+    }
+
+    await authService.resetPassword(token, password);
+
+    res.status(200).json({ message: "Password reset successfully" });
+  } catch (err) {
+    next(err);
+  }
+};

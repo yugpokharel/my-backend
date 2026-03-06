@@ -1,6 +1,7 @@
 import { authRepository } from "./auth.repository.js";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
+import crypto from "crypto";
 
 const JWT_SECRET = process.env.JWT_SECRET;
 
@@ -70,4 +71,36 @@ export const updateProfilePicture = async (userId, profilePicture) => {
     throw err;
   }
   return user;
+};
+
+export const forgotPassword = async (email) => {
+  const user = await authRepository.findByEmail(email);
+  if (!user) return; // Don't reveal if email exists
+
+  const rawToken = crypto.randomBytes(32).toString("hex");
+  const hashedToken = crypto.createHash("sha256").update(rawToken).digest("hex");
+
+  user.resetPasswordToken = hashedToken;
+  user.resetPasswordExpire = Date.now() + 15 * 60 * 1000; // 15 minutes
+  await user.save();
+
+  // TODO: Send email with reset link. For now, log to console.
+  console.log(`Password reset token for ${email}: ${rawToken}`);
+  console.log(`Reset link: http://localhost:3000/reset-password?token=${rawToken}`);
+
+  return rawToken;
+};
+
+export const resetPassword = async (token, newPassword) => {
+  const hashedToken = crypto.createHash("sha256").update(token).digest("hex");
+  const user = await authRepository.findByResetToken(hashedToken);
+
+  if (!user) {
+    throw buildHttpError("Invalid or expired reset token", 400);
+  }
+
+  user.password = await bcrypt.hash(newPassword, 10);
+  user.resetPasswordToken = undefined;
+  user.resetPasswordExpire = undefined;
+  await user.save();
 };
