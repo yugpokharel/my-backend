@@ -76,7 +76,7 @@ export const updateProfilePicture = async (userId, profilePicture) => {
 export const forgotPassword = async (email) => {
   const normalizedEmail = email.trim().toLowerCase();
   const user = await authRepository.findByEmail(normalizedEmail);
-  if (!user) return; // Don't reveal if email exists
+  if (!user) return; 
 
   const otp = Math.floor(100000 + Math.random() * 900000).toString();
   const hashedOtp = crypto.createHash("sha256").update(otp).digest("hex");
@@ -85,7 +85,6 @@ export const forgotPassword = async (email) => {
   user.resetPasswordExpire = Date.now() + 15 * 60 * 1000; // 15 minutes
   await user.save();
 
-  // Send email in the background (don't block the response)
   import("../../utils/sendEmail.js")
     .then(({ sendEmail }) =>
       sendEmail({
@@ -116,11 +115,14 @@ export const resetPassword = async (email, otp, newPassword) => {
   const user = await authRepository.findByEmailAndResetToken(normalizedEmail, hashedOtp);
 
   if (!user) {
+    console.error("resetPassword: No user found for email:", normalizedEmail, "with OTP hash:", hashedOtp);
     throw buildHttpError("Invalid or expired OTP", 400);
   }
 
+  console.log("resetPassword: User found:", user.email, "OTP hash:", hashedOtp);
   user.password = await bcrypt.hash(newPassword, 10);
   user.resetPasswordToken = undefined;
   user.resetPasswordExpire = undefined;
   await user.save();
+  console.log("resetPassword: Password updated for user:", user.email);
 };

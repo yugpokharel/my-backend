@@ -115,11 +115,9 @@ export const updateProfilePicture = async (req, res, next) => {
 
     const newPath = `/uploads/profiles/${req.file.filename}`;
 
-    // Delete old profile picture if it exists
     const oldPicture = req.user.profilePicture;
     if (oldPicture) {
       try {
-        // oldPicture is like "/uploads/profiles/file.jpg", strip leading slash for fs path
         await fs.unlink(oldPicture.replace(/^\//, ""));
       } catch (unlinkErr) {
         // Old file may not exist, that's fine
@@ -127,7 +125,6 @@ export const updateProfilePicture = async (req, res, next) => {
       }
     }
 
-    // Update user in DB
     const user = await authService.updateProfilePicture(req.user._id, newPath);
 
     res.status(200).json({ data: { profilePicture: user.profilePicture } });
